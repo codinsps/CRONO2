@@ -1,0 +1,453 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ICEC — Acceso al Sistema · Proyecto CIP</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1f2530;
+    --border2: #2a3040;
+    --accent: #f0a500;
+    --accent3: #00d4aa;
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --danger: #ef4444;
+  }
+
+  * { margin:0; padding:0; box-sizing:border-box; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+    overflow: hidden;
+  }
+
+  /* Background grid */
+  body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    background-image:
+      linear-gradient(rgba(240,165,0,0.03) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(240,165,0,0.03) 1px, transparent 1px);
+    background-size: 60px 60px;
+    pointer-events: none;
+  }
+
+  /* Glow */
+  body::after {
+    content: '';
+    position: fixed;
+    top: -200px; left: 50%;
+    transform: translateX(-50%);
+    width: 600px; height: 600px;
+    background: radial-gradient(circle, rgba(240,165,0,0.06) 0%, transparent 70%);
+    pointer-events: none;
+  }
+
+  .login-wrap {
+    width: 100%;
+    max-width: 440px;
+    padding: 1rem;
+    position: relative;
+    z-index: 1;
+    animation: fadeUp 0.6s ease both;
+  }
+
+  @keyframes fadeUp {
+    from { opacity:0; transform:translateY(24px); }
+    to   { opacity:1; transform:translateY(0); }
+  }
+
+  /* Logo top */
+  .top-brand {
+    text-align: center;
+    margin-bottom: 2rem;
+  }
+
+  .brand-badge {
+    display: inline-block;
+    background: var(--accent);
+    color: #000;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.3rem;
+    letter-spacing: 0.12em;
+    padding: 5px 16px;
+    border-radius: 6px;
+    margin-bottom: 0.6rem;
+  }
+
+  .brand-sub {
+    font-size: 0.72rem;
+    color: var(--text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.12em;
+    font-weight: 300;
+  }
+
+  /* Card */
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border2);
+    border-top: 3px solid var(--accent);
+    border-radius: 16px;
+    padding: 2.5rem 2rem;
+    box-shadow: 0 40px 80px rgba(0,0,0,0.5), 0 0 0 1px rgba(240,165,0,0.05);
+  }
+
+  .card-icon {
+    width: 56px; height: 56px;
+    background: rgba(240,165,0,0.08);
+    border: 1px solid rgba(240,165,0,0.2);
+    border-radius: 16px;
+    display: flex; align-items:center; justify-content:center;
+    font-size: 1.5rem;
+    margin: 0 auto 1.4rem;
+  }
+
+  .card-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 2rem;
+    letter-spacing: 0.06em;
+    text-align: center;
+    margin-bottom: 0.3rem;
+  }
+
+  .card-sub {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    text-align: center;
+    margin-bottom: 2rem;
+    line-height: 1.6;
+  }
+
+  /* Divider */
+  .divider {
+    display: flex;
+    align-items: center;
+    gap: 0.8rem;
+    margin-bottom: 1.5rem;
+  }
+  .divider-line { flex:1; height:1px; background:var(--border); }
+  .divider-text { font-size:0.68rem; color:var(--text-muted); text-transform:uppercase; letter-spacing:0.1em; white-space:nowrap; }
+
+  /* Form */
+  .field { margin-bottom: 1.2rem; }
+  .field label {
+    display: block;
+    font-size: 0.72rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-muted);
+    font-weight: 500;
+    margin-bottom: 0.5rem;
+  }
+  .field input {
+    width: 100%;
+    background: var(--bg);
+    border: 1px solid var(--border2);
+    color: var(--text);
+    font-family: 'JetBrains Mono', monospace;
+    font-size: 0.9rem;
+    padding: 12px 44px 12px 14px;
+    border-radius: 8px;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .field input:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(240,165,0,0.1);
+  }
+  .field input.err {
+    border-color: var(--danger);
+    box-shadow: 0 0 0 3px rgba(239,68,68,0.1);
+    animation: shake 0.35s ease;
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%,60%{transform:translateX(-6px)}
+    40%,80%{transform:translateX(6px)}
+  }
+  .field-wrap { position:relative; }
+  .eye {
+    position:absolute; right:12px; top:50%; transform:translateY(-50%);
+    background:none; border:none; color:var(--text-muted);
+    cursor:pointer; font-size:0.9rem; transition:color 0.2s;
+  }
+  .eye:hover { color:var(--text); }
+
+  /* Error msg */
+  .err-msg {
+    background: rgba(239,68,68,0.08);
+    border: 1px solid rgba(239,68,68,0.25);
+    border-radius: 6px;
+    padding: 9px 12px;
+    font-size: 0.74rem;
+    color: #fca5a5;
+    font-family: 'JetBrains Mono', monospace;
+    margin-bottom: 1.2rem;
+    display: none;
+    align-items: center;
+    gap: 0.5rem;
+  }
+  .err-msg.show { display:flex; }
+
+  /* Submit btn */
+  .btn-submit {
+    width: 100%;
+    background: var(--accent);
+    color: #000;
+    border: none;
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 1.15rem;
+    letter-spacing: 0.12em;
+    padding: 14px;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex; align-items:center; justify-content:center; gap:0.5rem;
+  }
+  .btn-submit:hover {
+    background: #ffb820;
+    transform: translateY(-1px);
+    box-shadow: 0 8px 24px rgba(240,165,0,0.25);
+  }
+  .btn-submit:active { transform:translateY(0); }
+  .btn-submit:disabled { opacity:0.5; cursor:not-allowed; transform:none; box-shadow:none; }
+
+  /* Loading spinner */
+  .spinner {
+    width: 16px; height: 16px;
+    border: 2px solid rgba(0,0,0,0.3);
+    border-top-color: #000;
+    border-radius: 50%;
+    animation: spin 0.7s linear infinite;
+  }
+  @keyframes spin { to { transform:rotate(360deg); } }
+
+  .hint {
+    text-align:center;
+    font-size:0.7rem;
+    color:var(--text-muted);
+    font-family:'JetBrains Mono',monospace;
+    margin-top:0.8rem;
+    min-height:18px;
+  }
+
+  /* Footer */
+  .footer {
+    text-align: center;
+    margin-top: 1.5rem;
+    font-size: 0.68rem;
+    color: var(--text-muted);
+    font-family: 'JetBrains Mono', monospace;
+    line-height: 1.8;
+  }
+
+  .footer span { color: var(--accent3); }
+
+  /* Access level pills */
+  .access-info {
+    display: flex;
+    gap: 0.8rem;
+    margin-bottom: 1.8rem;
+    justify-content: center;
+  }
+  .access-pill {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    background: var(--surface2);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.68rem;
+    font-family: 'JetBrains Mono', monospace;
+    color: var(--text-muted);
+  }
+  .pill-dot { width:6px; height:6px; border-radius:50%; }
+</style>
+</head>
+<body>
+
+<div class="login-wrap">
+
+  <div class="top-brand">
+    <div class="brand-badge">ICEC</div>
+    <div class="brand-sub">Ingenieros y Constructores · Honduras</div>
+  </div>
+
+  <div class="card">
+    <div class="card-icon">🏗️</div>
+    <div class="card-title">ACCESO AL SISTEMA</div>
+    <div class="card-sub">
+      Programación de Actividades<br>
+      <strong style="color:var(--accent)">Proyecto Automatización CIP · LACTHOSA</strong>
+    </div>
+
+    <div class="access-info">
+      <div class="access-pill">
+        <span class="pill-dot" style="background:var(--accent3)"></span>
+        Visualización
+      </div>
+      <div class="access-pill">
+        <span class="pill-dot" style="background:var(--accent)"></span>
+        Edición (propietario)
+      </div>
+    </div>
+
+    <div class="divider">
+      <div class="divider-line"></div>
+      <div class="divider-text">Identificación requerida</div>
+      <div class="divider-line"></div>
+    </div>
+
+    <div class="err-msg" id="errMsg">⚠ Credenciales incorrectas. Intente de nuevo.</div>
+
+    <div class="field">
+      <label>Usuario</label>
+      <div class="field-wrap">
+        <input type="text" id="userInput" placeholder="usuario@empresa.com"
+          onkeydown="if(event.key==='Enter')document.getElementById('passInput').focus()"
+          oninput="clearErr()">
+      </div>
+    </div>
+
+    <div class="field">
+      <label>Contraseña</label>
+      <div class="field-wrap">
+        <input type="password" id="passInput" placeholder="••••••••"
+          onkeydown="if(event.key==='Enter')doAccess()"
+          oninput="clearErr()">
+        <button class="eye" onclick="toggleEye()" title="Mostrar/ocultar">👁</button>
+      </div>
+    </div>
+
+    <button class="btn-submit" id="submitBtn" onclick="doAccess()">
+      <span id="btnText">INGRESAR AL SISTEMA</span>
+    </button>
+
+    <div class="hint" id="hintMsg"></div>
+  </div>
+
+  <div class="footer">
+    <span>●</span> Acceso restringido a personal autorizado<br>
+    Cotización 584-25 · 16 Mar — 04 Abr 2026
+  </div>
+
+</div>
+
+<script>
+  // ── CREDENCIALES ─────────────────────────────────────────────────────────
+  // VIEWERS: pueden ver el avance pero NO editar
+  // OWNERS:  pueden ver Y editar el avance
+  //
+  // Para agregar usuarios: añada una línea en el array correspondiente
+  // formato: { user: 'correo o nombre', pass: 'contraseña' }
+  //
+  // IMPORTANTE: Esta configuración es para acceso interno organizacional.
+  // Para mayor seguridad en producción, use Netlify Identity o un backend.
+
+  const VIEWERS = [
+    { user: 'lacthosa', pass: 'ver2026' },
+    { user: 'viewer',   pass: 'ver2026' },
+  ];
+
+  const OWNERS = [
+    { user: 'icec',     pass: 'ICEC2026' },
+    { user: 'admin',    pass: 'ICEC2026' },
+  ];
+
+  // ── AUTH ─────────────────────────────────────────────────────────────────
+  let attempts = 0, lockUntil = 0;
+  const MAX = 5;
+
+  function clearErr() {
+    document.getElementById('errMsg').classList.remove('show');
+    document.getElementById('userInput').classList.remove('err');
+    document.getElementById('passInput').classList.remove('err');
+  }
+
+  function toggleEye() {
+    const i = document.getElementById('passInput');
+    i.type = i.type === 'password' ? 'text' : 'password';
+  }
+
+  function doAccess() {
+    const now = Date.now();
+    if (now < lockUntil) {
+      document.getElementById('hintMsg').textContent =
+        `⏳ Bloqueado. Espere ${Math.ceil((lockUntil - now)/1000)}s.`;
+      return;
+    }
+
+    const user = document.getElementById('userInput').value.trim().toLowerCase();
+    const pass = document.getElementById('passInput').value;
+
+    if (!user || !pass) {
+      document.getElementById('errMsg').textContent = '⚠ Complete usuario y contraseña.';
+      document.getElementById('errMsg').classList.add('show');
+      return;
+    }
+
+    const btn = document.getElementById('submitBtn');
+    btn.disabled = true;
+    document.getElementById('btnText').innerHTML = '<div class="spinner"></div>';
+
+    setTimeout(() => {
+      btn.disabled = false;
+      document.getElementById('btnText').textContent = 'INGRESAR AL SISTEMA';
+
+      // Verificar si es OWNER
+      const isOwner = OWNERS.some(o =>
+        o.user.toLowerCase() === user && o.pass === pass
+      );
+
+      // Verificar si es VIEWER
+      const isViewer = VIEWERS.some(v =>
+        v.user.toLowerCase() === user && v.pass === pass
+      );
+
+      if (isOwner || isViewer) {
+        attempts = 0;
+        // Guardar rol en sessionStorage
+        sessionStorage.setItem('cip_role', isOwner ? 'owner' : 'viewer');
+        sessionStorage.setItem('cip_user', user);
+        // Redirigir al dashboard
+        window.location.href = 'app.html';
+      } else {
+        attempts++;
+        document.getElementById('passInput').value = '';
+        document.getElementById('passInput').classList.add('err');
+        document.getElementById('errMsg').textContent = '⚠ Usuario o contraseña incorrectos.';
+        document.getElementById('errMsg').classList.add('show');
+
+        if (attempts >= MAX) {
+          lockUntil = Date.now() + 60000;
+          attempts = 0;
+          document.getElementById('hintMsg').textContent = '🔒 Demasiados intentos. Bloqueado 60s.';
+        } else {
+          document.getElementById('hintMsg').textContent =
+            `Intentos restantes: ${MAX - attempts}`;
+        }
+      }
+    }, 600);
+  }
+
+  // Auto-focus
+  document.getElementById('userInput').focus();
+</script>
+</body>
+</html>

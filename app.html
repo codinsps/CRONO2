@@ -1,0 +1,1000 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<script>
+(function(){
+  var role = sessionStorage.getItem('cip_role');
+  if(!role){ window.location.href='index.html'; }
+})();
+</script>
+
+<title>ICEC — Proyecto Automatización CIP · LACTHOSA</title>
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600;1,9..40,300&family=JetBrains+Mono:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0c10;
+    --surface: #111318;
+    --surface2: #181c24;
+    --border: #1f2530;
+    --border2: #2a3040;
+    --accent: #f0a500;
+    --accent2: #ff6b35;
+    --accent3: #00d4aa;
+    --text: #e8eaf0;
+    --text-muted: #6b7280;
+    --text-dim: #9ca3af;
+    --done: #00d4aa;
+    --prog: #f0a500;
+    --danger: #ef4444;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body {
+    background:var(--bg); color:var(--text);
+    font-family:'DM Sans',sans-serif; min-height:100vh; overflow-x:hidden;
+  }
+  body::before {
+    content:''; position:fixed; inset:0; pointer-events:none; z-index:0; opacity:.4;
+    background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.04'/%3E%3C/svg%3E");
+  }
+
+  /* ── MODAL ── */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,.88);
+    backdrop-filter:blur(18px); z-index:9999;
+    display:flex; align-items:center; justify-content:center;
+    opacity:0; transition:opacity .3s; pointer-events:none;
+  }
+  .modal-overlay.open { opacity:1; pointer-events:all; }
+  .modal-box {
+    background:var(--surface); border:1px solid var(--border2);
+    border-top:3px solid var(--accent); border-radius:14px;
+    padding:2.5rem 2rem; width:100%; max-width:390px;
+    transform:translateY(24px) scale(.97);
+    transition:transform .35s cubic-bezier(.34,1.56,.64,1);
+    position:relative;
+  }
+  .modal-overlay.open .modal-box { transform:translateY(0) scale(1); }
+  .modal-close {
+    position:absolute; top:1rem; right:1rem;
+    background:none; border:1px solid var(--border); color:var(--text-muted);
+    width:28px; height:28px; border-radius:6px; cursor:pointer;
+    font-size:.85rem; display:flex; align-items:center; justify-content:center;
+    transition:all .2s;
+  }
+  .modal-close:hover { background:var(--surface2); color:var(--text); }
+  .modal-icon {
+    width:52px; height:52px; background:rgba(240,165,0,.1);
+    border:1px solid rgba(240,165,0,.3); border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-size:1.5rem; margin:0 auto 1.2rem;
+  }
+  .modal-title {
+    font-family:'Bebas Neue',sans-serif; font-size:1.7rem;
+    letter-spacing:.06em; text-align:center; margin-bottom:.3rem;
+  }
+  .modal-sub {
+    font-size:.78rem; color:var(--text-muted); text-align:center;
+    margin-bottom:1.8rem; line-height:1.6;
+  }
+  .input-group { position:relative; margin-bottom:1rem; }
+  .input-group label {
+    display:block; font-size:.72rem; text-transform:uppercase;
+    letter-spacing:.1em; color:var(--text-muted); margin-bottom:.4rem; font-weight:500;
+  }
+  .input-group input {
+    width:100%; background:var(--bg); border:1px solid var(--border2);
+    color:var(--text); font-family:'JetBrains Mono',monospace;
+    font-size:.92rem; padding:11px 44px 11px 14px;
+    border-radius:8px; outline:none;
+    transition:border-color .2s, box-shadow .2s; letter-spacing:.18em;
+  }
+  .input-group input:focus {
+    border-color:var(--accent);
+    box-shadow:0 0 0 3px rgba(240,165,0,.12);
+  }
+  .input-group input.shake {
+    border-color:var(--danger);
+    box-shadow:0 0 0 3px rgba(239,68,68,.12);
+    animation:shake .35s ease;
+  }
+  @keyframes shake {
+    0%,100%{transform:translateX(0)}
+    20%,60%{transform:translateX(-6px)}
+    40%,80%{transform:translateX(6px)}
+  }
+  .eye-btn {
+    position:absolute; right:12px; bottom:11px;
+    background:none; border:none; color:var(--text-muted);
+    cursor:pointer; font-size:.9rem; transition:color .2s; padding:0;
+  }
+  .eye-btn:hover { color:var(--text); }
+  .modal-error {
+    background:rgba(239,68,68,.1); border:1px solid rgba(239,68,68,.3);
+    border-radius:6px; padding:8px 12px; font-size:.74rem; color:#fca5a5;
+    font-family:'JetBrains Mono',monospace; margin-bottom:1rem; display:none;
+  }
+  .modal-error.on { display:block; }
+  .btn-login {
+    width:100%; background:var(--accent); color:#000; border:none;
+    font-family:'Bebas Neue',sans-serif; font-size:1.1rem;
+    letter-spacing:.12em; padding:13px; border-radius:8px; cursor:pointer;
+    transition:all .2s; display:flex; align-items:center; justify-content:center; gap:.5rem;
+  }
+  .btn-login:hover { background:#ffb820; transform:translateY(-1px); box-shadow:0 6px 20px rgba(240,165,0,.25); }
+  .btn-login:active { transform:translateY(0); }
+  .btn-login:disabled { opacity:.5; cursor:not-allowed; transform:none; }
+  .attempt-hint { text-align:center; font-size:.7rem; color:var(--text-muted); margin-top:.8rem; font-family:'JetBrains Mono',monospace; min-height:18px; }
+
+  /* ── VIEW-ONLY LOCK ── */
+  body.view-only .pct-range { pointer-events:none; opacity:.3; cursor:not-allowed; }
+  body.view-only .progress-control { position:relative; }
+  body.view-only .progress-control::after { content:''; position:absolute; inset:0; cursor:not-allowed; z-index:2; }
+  .vo-hint { display:none; font-size:.6rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; margin-top:2px; }
+  body.view-only .vo-hint { display:block; }
+
+  /* ── HEADER ── */
+  header {
+    position:sticky; top:0; z-index:100;
+    background:rgba(10,12,16,.93); backdrop-filter:blur(20px);
+    border-bottom:1px solid var(--border); padding:0 2rem;
+  }
+  .header-inner {
+    max-width:1600px; margin:0 auto;
+    display:flex; align-items:center; justify-content:space-between;
+    height:64px; gap:2rem;
+  }
+  .logo-area { display:flex; align-items:center; gap:1rem; }
+  .logo-badge {
+    background:var(--accent); color:#000;
+    font-family:'Bebas Neue',sans-serif; font-size:1.1rem;
+    letter-spacing:.1em; padding:4px 10px; border-radius:4px;
+  }
+  .proj-title { font-size:.8rem; font-weight:300; color:var(--text-dim); letter-spacing:.06em; text-transform:uppercase; }
+  .header-right { display:flex; align-items:center; gap:1rem; }
+  .meta-pill {
+    display:flex; align-items:center; gap:.5rem;
+    background:var(--surface); border:1px solid var(--border);
+    border-radius:20px; padding:5px 14px;
+    font-size:.78rem; font-family:'JetBrains Mono',monospace; font-weight:300;
+  }
+  .pulse { width:6px; height:6px; border-radius:50%; background:var(--accent3); animation:pulse 2s infinite; }
+  @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:.3} }
+  .auth-btn {
+    display:flex; align-items:center; gap:.5rem;
+    font-family:'JetBrains Mono',monospace; font-size:.72rem;
+    padding:6px 14px; border-radius:20px; cursor:pointer;
+    transition:all .2s; border:1px solid;
+  }
+  .auth-btn.viewer { background:var(--surface); border-color:var(--border); color:var(--text-muted); }
+  .auth-btn.viewer:hover { border-color:var(--accent); color:var(--accent); }
+  .auth-btn.owner { background:rgba(240,165,0,.12); border-color:rgba(240,165,0,.4); color:var(--accent); }
+  .auth-btn.owner:hover { background:rgba(240,165,0,.2); }
+  .auth-dot { width:6px; height:6px; border-radius:50%; }
+
+  /* ── EDIT BANNER ── */
+  .edit-banner { display:none; background:rgba(240,165,0,.07); border-bottom:1px solid rgba(240,165,0,.18); padding:.6rem 2rem; }
+  .edit-banner.on { display:block; }
+  .edit-banner-inner { max-width:1600px; margin:0 auto; display:flex; align-items:center; justify-content:space-between; }
+  .banner-text { display:flex; align-items:center; gap:.6rem; font-size:.74rem; font-family:'JetBrains Mono',monospace; color:var(--accent); }
+  .banner-dot { width:7px; height:7px; border-radius:50%; background:var(--accent); animation:pulse 1.4s infinite; }
+  .btn-logout {
+    background:none; border:1px solid rgba(240,165,0,.3); color:var(--accent);
+    font-family:'JetBrains Mono',monospace; font-size:.7rem;
+    padding:4px 12px; border-radius:5px; cursor:pointer; transition:all .2s;
+  }
+  .btn-logout:hover { background:rgba(240,165,0,.1); border-color:var(--accent); }
+
+  /* ── HERO ── */
+  .hero { background:var(--surface); border-bottom:1px solid var(--border); padding:2rem; }
+  .hero-inner { max-width:1600px; margin:0 auto; display:grid; grid-template-columns:1fr auto; gap:2rem; align-items:center; }
+  .hero-title { font-family:'Bebas Neue',sans-serif; font-size:clamp(1.8rem,3vw,2.8rem); letter-spacing:.04em; line-height:1; }
+  .hero-title span { color:var(--accent); }
+  .hero-sub { margin-top:.4rem; font-size:.82rem; color:var(--text-muted); font-weight:300; letter-spacing:.04em; }
+  .stats-row { display:flex; gap:1.5rem; }
+  .stat-box { text-align:center; background:var(--bg); border:1px solid var(--border); border-radius:8px; padding:.8rem 1.2rem; min-width:90px; }
+  .stat-box .val { font-family:'Bebas Neue',sans-serif; font-size:2rem; line-height:1; color:var(--accent); }
+  .stat-box .lbl { font-size:.68rem; text-transform:uppercase; letter-spacing:.08em; color:var(--text-muted); margin-top:2px; }
+
+  /* ── GLOBAL PROGRESS ── */
+  .gp-section { max-width:1600px; margin:2rem auto; padding:0 2rem; }
+  .gp-wrap { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:1.5rem 2rem; display:grid; grid-template-columns:1fr auto; gap:1.5rem; align-items:center; }
+  .bar-lbl { font-size:.78rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); margin-bottom:.6rem; }
+  .p-track { height:8px; background:var(--border2); border-radius:99px; overflow:hidden; }
+  .p-fill { height:100%; border-radius:99px; background:linear-gradient(90deg,var(--accent3),var(--accent)); transition:width .6s cubic-bezier(.34,1.56,.64,1); position:relative; overflow:hidden; }
+  .p-fill::after { content:''; position:absolute; inset:0; background:linear-gradient(90deg,transparent 0%,rgba(255,255,255,.2) 50%,transparent 100%); animation:shimmer 2.5s infinite; }
+  @keyframes shimmer { 0%{transform:translateX(-100%)} 100%{transform:translateX(200%)} }
+  .gp-pct { font-family:'Bebas Neue',sans-serif; font-size:3.5rem; color:var(--accent); line-height:1; }
+  .gp-pct sup { font-size:1.2rem; color:var(--text-muted); }
+
+  /* ── TOOLBAR ── */
+  .toolbar { max-width:1600px; margin:0 auto 1rem; padding:0 2rem; display:flex; align-items:center; justify-content:space-between; gap:1rem; flex-wrap:wrap; }
+  .f-tabs { display:flex; gap:.4rem; }
+  .f-tab { background:var(--surface); border:1px solid var(--border); color:var(--text-muted); font-family:'DM Sans',sans-serif; font-size:.78rem; font-weight:500; letter-spacing:.04em; padding:6px 14px; border-radius:6px; cursor:pointer; transition:all .2s; }
+  .f-tab:hover { border-color:var(--border2); color:var(--text); }
+  .f-tab.active { background:var(--accent); border-color:var(--accent); color:#000; font-weight:600; }
+  .v-btn { background:var(--surface); border:1px solid var(--border); color:var(--text-muted); font-size:.75rem; padding:6px 12px; border-radius:6px; cursor:pointer; transition:all .2s; font-family:'JetBrains Mono',monospace; }
+  .v-btn:hover { color:var(--text); border-color:var(--border2); }
+  .v-btn.active { background:var(--surface2); border-color:var(--border2); color:var(--text); }
+  .legend { display:flex; gap:1.5rem; align-items:center; }
+  .leg-i { display:flex; align-items:center; gap:.4rem; font-size:.72rem; color:var(--text-muted); }
+  .leg-d { width:8px; height:8px; border-radius:2px; }
+
+  /* ── GANTT ── */
+  .gantt { max-width:1600px; margin:0 auto; padding:0 2rem 4rem; }
+  .sec-block { margin-bottom:.5rem; animation:fadeUp .4s ease both; }
+  @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+  .sec-hdr {
+    display:grid; grid-template-columns:36px 1fr auto; align-items:center;
+    gap:.8rem; background:var(--surface2); border:1px solid var(--border2);
+    border-left:3px solid var(--accent); border-radius:8px;
+    padding:.8rem 1rem; cursor:pointer; transition:background .2s;
+    margin-bottom:2px; user-select:none;
+  }
+  .sec-hdr:hover { background:#1e2230; }
+  .sec-num { font-family:'Bebas Neue',sans-serif; font-size:1.1rem; color:var(--accent); text-align:center; }
+  .sec-name { font-size:.82rem; font-weight:500; letter-spacing:.03em; text-transform:uppercase; }
+  .sec-meta { display:flex; align-items:center; gap:1rem; }
+  .sec-prog { display:flex; align-items:center; gap:.6rem; font-size:.72rem; font-family:'JetBrains Mono',monospace; color:var(--text-muted); }
+  .mini-bar { width:80px; height:4px; background:var(--border2); border-radius:99px; overflow:hidden; }
+  .mini-fill { height:100%; background:linear-gradient(90deg,var(--accent3),var(--accent)); border-radius:99px; transition:width .5s ease; }
+  .chev { font-size:.7rem; color:var(--text-muted); transition:transform .3s; margin-left:.5rem; }
+  .sec-block.collapsed .chev { transform:rotate(-90deg); }
+  .act-wrap { overflow:hidden; transition:max-height .4s cubic-bezier(.16,1,.3,1); max-height:9999px; }
+  .sec-block.collapsed .act-wrap { max-height:0; }
+
+  /* ── ACTIVITY ROW ── */
+  .act-row {
+    display:grid; grid-template-columns:40px 60px 1fr 120px 120px 200px 100px;
+    align-items:center; gap:.5rem; padding:.55rem 1rem;
+    border-bottom:1px solid var(--border); background:var(--surface);
+    transition:background .15s; font-size:.78rem;
+  }
+  .act-row:hover { background:var(--surface2); }
+  .act-row:last-child { border-bottom:none; margin-bottom:8px; }
+  .a-idx { font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--text-muted); text-align:center; }
+  .a-code { font-family:'JetBrains Mono',monospace; font-size:.68rem; color:var(--accent); }
+  .a-desc { color:var(--text-dim); line-height:1.3; font-size:.73rem; font-weight:300; }
+  .a-qty { display:flex; align-items:center; gap:.3rem; font-family:'JetBrains Mono',monospace; font-size:.72rem; color:var(--text-dim); }
+  .a-unit { font-size:.62rem; color:var(--text-muted); background:var(--border); padding:1px 5px; border-radius:3px; }
+  .a-dates { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--text-muted); display:flex; flex-direction:column; gap:2px; }
+  .d-chip { display:inline-flex; align-items:center; gap:3px; }
+  .d-dot { width:4px; height:4px; border-radius:50%; flex-shrink:0; }
+  .d-dot.s { background:var(--accent3); } .d-dot.e { background:var(--accent2); }
+  .prog-ctrl { display:flex; flex-direction:column; gap:4px; position:relative; }
+  .pct-row { display:flex; align-items:center; gap:6px; }
+  .pct-range { width:110px; height:4px; cursor:pointer; accent-color:var(--accent); }
+  .pct-sign { font-size:.65rem; color:var(--text-muted); font-family:'JetBrains Mono',monospace; min-width:28px; }
+  .tiny-bar { height:3px; background:var(--border2); border-radius:99px; overflow:hidden; }
+  .tiny-fill { height:100%; border-radius:99px; transition:width .4s ease, background .3s; }
+  .s-badge { display:inline-flex; align-items:center; gap:4px; font-family:'JetBrains Mono',monospace; font-size:.62rem; font-weight:500; letter-spacing:.06em; text-transform:uppercase; padding:3px 8px; border-radius:4px; border:1px solid; }
+  .b-done { background:rgba(0,212,170,.1); border-color:rgba(0,212,170,.4); color:var(--done); }
+  .b-prog { background:rgba(240,165,0,.1); border-color:rgba(240,165,0,.4); color:var(--prog); }
+  .b-todo { background:transparent; border-color:var(--border2); color:var(--text-muted); }
+  .week-hdr { display:grid; grid-template-columns:40px 60px 1fr 120px 120px 200px 100px; gap:.5rem; padding:.4rem 1rem; background:var(--bg); border-bottom:1px solid var(--border); position:sticky; top:65px; z-index:10; }
+  .col-h { font-size:.62rem; text-transform:uppercase; letter-spacing:.1em; color:var(--text-muted); font-weight:500; }
+  .week-sep { display:flex; align-items:center; gap:1rem; padding:1rem 1rem .5rem; margin-top:.5rem; }
+  .wk-lbl { font-family:'Bebas Neue',sans-serif; font-size:.9rem; letter-spacing:.12em; color:var(--text-muted); white-space:nowrap; }
+  .wk-lbl .wn { color:var(--accent); }
+  .wk-line { flex:1; height:1px; background:var(--border); }
+  .wk-range { font-family:'JetBrains Mono',monospace; font-size:.65rem; color:var(--text-muted); white-space:nowrap; }
+
+  /* ── TOAST ── */
+  .toast { position:fixed; bottom:2rem; right:2rem; background:var(--surface2); border:1px solid var(--border2); border-left:3px solid var(--accent3); padding:.8rem 1.2rem; border-radius:8px; font-size:.78rem; color:var(--text); z-index:1000; transform:translateY(20px); opacity:0; transition:all .3s cubic-bezier(.34,1.56,.64,1); pointer-events:none; font-family:'JetBrains Mono',monospace; max-width:320px; }
+  .toast.on { transform:translateY(0); opacity:1; }
+
+  @media(max-width:1100px){
+    .act-row,.week-hdr{grid-template-columns:40px 55px 1fr 100px 170px 90px;}
+    .a-dates{display:none;}
+  }
+  @media(max-width:768px){
+    .stats-row{display:none;}
+    .act-row,.week-hdr{grid-template-columns:35px 1fr 150px 80px;}
+    .a-idx,.a-code,.a-dates{display:none;}
+  }
+</style>
+</head>
+<body class="view-only">
+
+<!-- ═══ LOGIN MODAL ═══════════════════════════════════════ -->
+<div class="modal-overlay" id="modal">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeModal()">✕</button>
+    <div class="modal-icon">🔐</div>
+    <div class="modal-title">Acceso Propietario</div>
+    <div class="modal-sub">Ingrese la contraseña para activar<br>el <strong style="color:var(--accent)">modo edición</strong> del proyecto.</div>
+    <div class="modal-error" id="merr">⚠ Contraseña incorrecta. Intente de nuevo.</div>
+    <div class="input-group">
+      <label>Contraseña</label>
+      <input type="password" id="pw" placeholder="••••••••"
+        onkeydown="if(event.key==='Enter')doLogin()"
+        oninput="clearErr()">
+      <button class="eye-btn" onclick="toggleEye()" title="Mostrar">👁</button>
+    </div>
+    <button class="btn-login" id="loginBtn" onclick="doLogin()">INGRESAR AL MODO EDICIÓN</button>
+    <div class="attempt-hint" id="ahint"></div>
+  </div>
+</div>
+
+<!-- ═══ HEADER ════════════════════════════════════════════ -->
+<header>
+  <div class="header-inner">
+    <div class="logo-area">
+      <div class="logo-badge">ICEC</div>
+      <div>
+        <div style="font-weight:600;font-size:.88rem;">Cotización 584-25</div>
+        <div class="proj-title">LACTHOSA · Automatización CIP</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <div class="meta-pill"><span class="pulse"></span>EN EJECUCIÓN</div>
+      <div class="meta-pill" style="font-size:.72rem;">16/03 — 04/04/2026</div>
+      <button class="auth-btn viewer" id="authBtn" onclick="openModal()">
+        <span class="auth-dot" style="background:var(--text-muted);"></span>
+        <span id="authLabel">SOLO LECTURA</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- ═══ EDIT BANNER ═══════════════════════════════════════ -->
+<div class="edit-banner" id="editBanner">
+  <div class="edit-banner-inner">
+    <div class="banner-text">
+      <span class="banner-dot"></span>
+      MODO EDICIÓN ACTIVO — Puede modificar el avance de todas las actividades
+    </div>
+    <button class="btn-logout" onclick="doLogout()">⏏ CERRAR SESIÓN</button>
+  </div>
+</div>
+
+<!-- ═══ SYNC BAR ════════════════════════════════════════ -->
+<div id="syncBar" style="
+  display:none;
+  background:var(--surface2);
+  border-bottom:1px solid var(--border);
+  padding:0.45rem 2rem;
+  font-size:0.72rem;
+  font-family:'JetBrains Mono',monospace;
+  text-align:center;
+  transition:all 0.3s;
+"></div>
+
+<!-- ═══ HERO ══════════════════════════════════════════════ -->
+<div class="hero">
+  <div class="hero-inner">
+    <div>
+      <div class="hero-title">INSTALACIÓN SUMINISTRO VAPOR<br><span>PROYECTO AUTOMATIZACIÓN CIP</span></div>
+      <div class="hero-sub">SUCETH HENRIQUEZ · COORDINADOR DE COMPRAS/COMPRAS · LACTHOSA</div>
+    </div>
+    <div class="stats-row" id="statsRow"></div>
+  </div>
+</div>
+
+<!-- ═══ GLOBAL PROGRESS ═══════════════════════════════════ -->
+<div class="gp-section">
+  <div class="gp-wrap">
+    <div style="flex:1">
+      <div class="bar-lbl">Avance Global del Proyecto</div>
+      <div class="p-track"><div class="p-fill" id="gBar" style="width:0%"></div></div>
+      <div style="display:flex;justify-content:space-between;margin-top:.5rem;">
+        <div style="font-size:.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace" id="gStatus">Calculando...</div>
+        <div style="font-size:.72rem;color:var(--text-muted);font-family:'JetBrains Mono',monospace">
+          <span style="color:var(--accent3)">■</span> Completado &nbsp;
+          <span style="color:var(--prog)">■</span> En progreso &nbsp;
+          <span style="color:var(--border2)">■</span> Pendiente
+        </div>
+      </div>
+    </div>
+    <div style="text-align:right">
+      <div class="gp-pct" id="gPct">0<sup>%</sup></div>
+      <div style="font-size:.68rem;color:var(--text-muted);text-transform:uppercase;letter-spacing:.1em;margin-top:2px;">Completado</div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ TOOLBAR ═══════════════════════════════════════════ -->
+<div class="toolbar">
+  <div class="f-tabs">
+    <button class="f-tab active" onclick="filterView('all',this)">Todas</button>
+    <button class="f-tab" onclick="filterView('prog',this)">En Progreso</button>
+    <button class="f-tab" onclick="filterView('todo',this)">Pendientes</button>
+    <button class="f-tab" onclick="filterView('done',this)">Completadas</button>
+  </div>
+  <div style="display:flex;gap:.8rem;align-items:center;">
+    <div class="legend">
+      <div class="leg-i"><div class="leg-d" style="background:var(--accent3)"></div>Completado</div>
+      <div class="leg-i"><div class="leg-d" style="background:var(--prog)"></div>En progreso</div>
+      <div class="leg-i"><div class="leg-d" style="background:var(--border2)"></div>Pendiente</div>
+    </div>
+    <button class="v-btn active" onclick="expandAll(event)">EXPANDIR TODO</button>
+    <button class="v-btn" onclick="collapseAll(event)">COLAPSAR</button>
+  </div>
+</div>
+
+<!-- ═══ GANTT ════════════════════════════════════════════= -->
+<div class="gantt" id="gantt"></div>
+
+<!-- ═══ TOAST ════════════════════════════════════════════= -->
+<div class="toast" id="toast"></div>
+
+<script>
+/* ─── CONTRASEÑA ───────────────────────────────────────────────────────────
+   Hash SHA-256 de la contraseña. Contraseña actual: ICEC2026
+   Para cambiarla: genere el hash de la nueva en https://emn178.github.io/online-tools/sha256.html
+   y reemplace el valor de OWNER_HASH.
+   ─────────────────────────────────────────────────────────────────────────── */
+const OWNER_HASH = 'cf50f7d14fe7f232fe7fa8e165160fb5661838a8fb34325abc563a45741a7756';
+
+async function sha256(s) {
+  const buf = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(s));
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+/* ─── AUTH STATE ────────────────────────────────────────────────────────── */
+let isOwner = false, attempts = 0, lockUntil = 0;
+// ── Leer rol desde sesión ──────────────────────────────────────────────────
+(function(){
+  const role = sessionStorage.getItem('cip_role');
+  const user = sessionStorage.getItem('cip_user') || '';
+  if (role === 'owner') {
+    isOwner = true;
+  }
+})();
+const MAX_ATT = 5;
+
+function openModal() {
+  if (isOwner) { doLogout(); return; }
+  document.getElementById('modal').classList.add('open');
+  setTimeout(()=>document.getElementById('pw').focus(), 300);
+}
+function closeModal() {
+  document.getElementById('modal').classList.remove('open');
+  document.getElementById('pw').value = '';
+  clearErr();
+}
+function clearErr() {
+  document.getElementById('merr').classList.remove('on');
+  document.getElementById('pw').classList.remove('shake');
+}
+function toggleEye() {
+  const i = document.getElementById('pw');
+  i.type = i.type === 'password' ? 'text' : 'password';
+}
+
+async function doLogin() {
+  const now = Date.now();
+  if (now < lockUntil) {
+    document.getElementById('ahint').textContent = `⏳ Bloqueado. Espere ${Math.ceil((lockUntil-now)/1000)}s.`;
+    return;
+  }
+  const pw = document.getElementById('pw').value;
+  if (!pw) return;
+  const btn = document.getElementById('loginBtn');
+  btn.disabled = true; btn.textContent = 'Verificando...';
+  const hash = await sha256(pw);
+  btn.disabled = false; btn.textContent = 'INGRESAR AL MODO EDICIÓN';
+
+  if (hash === OWNER_HASH) {
+    attempts = 0; isOwner = true;
+    closeModal(); activateOwner();
+  } else {
+    attempts++;
+    document.getElementById('pw').value = '';
+    document.getElementById('pw').classList.add('shake');
+    document.getElementById('merr').classList.add('on');
+    if (attempts >= MAX_ATT) {
+      lockUntil = Date.now() + 60000; attempts = 0;
+      document.getElementById('ahint').textContent = '🔒 Demasiados intentos. Bloqueado 60s.';
+    } else {
+      document.getElementById('ahint').textContent = `Intentos restantes: ${MAX_ATT - attempts}`;
+    }
+  }
+}
+
+function activateOwner() {
+  document.body.classList.remove('view-only');
+  document.getElementById('editBanner').classList.add('on');
+  const b = document.getElementById('authBtn');
+  b.className = 'auth-btn owner';
+  b.innerHTML = '<span class="auth-dot" style="background:var(--accent)"></span><span id="authLabel">MODO EDICIÓN</span>';
+  toast('✓ Modo edición activado — Bienvenido, propietario', 'var(--accent)');
+}
+
+function doLogout() {
+  sessionStorage.removeItem('cip_role');
+  sessionStorage.removeItem('cip_user');
+  window.location.href = 'index.html';
+}
+
+document.getElementById('modal').addEventListener('click', e => { if (e.target === document.getElementById('modal')) closeModal(); });
+
+/* ─── DATA ──────────────────────────────────────────────────────────────── */
+const DATA = [
+  { id:'VI', label:'VI', name:'Arreglos de Suministro de Vapor a CIP', color:'#f0a500', week:1,
+    items:[
+      { id:'17', name:'ARREGLO DE VAPOR A CIP 1', subsec:true, items:[
+        {id:'17.01',code:'6.01.1',desc:'Tubería 2.5" A106 Grado B cédula 40 - arnés vapor sobre losa',qty:20,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'17.02',code:'6.01.2',desc:'Tubería 2" A106 Grado B cédula 40 - bota condensados',qty:16,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.03',code:'6.01.3',desc:'Brida cuello soldable 2.5" ASME B16.5 Clase 150 ASTM A105',qty:9,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.04',code:'6.01.4',desc:'Brida cuello soldable 2.5" ASME B16.5 Clase 150 ASTM A105',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.05',code:'6.01.5',desc:'Aislamiento 2.5" lana mineral + Metal Jacket aluminio 0.5mm',qty:14,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'17.06',code:'6.01.6',desc:'Aislamiento 2" lana mineral + Metal Jacket aluminio 0.5mm',qty:4,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'17.07',code:'6.01.7',desc:'Válvula globo corte 2.5" BSA1 Spirax Sarco A216 WCB clase 150 manual',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.08',code:'6.01.8',desc:'Separador de gotas 2" Spirax Sarco S2 hierro fundido roscado',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.09',code:'6.01.9',desc:'Filtro strainer Y 2.5" Spirax Sarco DN65 bridado 1.6mm',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.10',code:'6.01.10',desc:'Válvula reguladora presión 2" pilotada DP17/DP27 bridada clase 150',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.11',code:'6.01.11',desc:'Válvula seguridad 2.5" bronce SV5601 150psi NPT + descarga techo',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'17.12',code:'6.01.12',desc:'Manómetro Bourdon 1/2" NPT 0-250psi + sifón + válvula cierre',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'18', name:'ARREGLO DE VAPOR A CIP 2', subsec:true, items:[
+        {id:'18.01',code:'6.02.1',desc:'Tubería 2.5" A106 Grado B cédula 40 - arnés vapor',qty:20,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'18.02',code:'6.02.2',desc:'Tubería 2" A106 Grado B - bota condensados',qty:16,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'18.03',code:'6.02.3',desc:'Brida cuello soldable 2.5" ASME B16.5 Clase 150 A105',qty:9,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'18.05',code:'6.02.5',desc:'Aislamiento 2.5" lana mineral + Metal Jacket aluminio',qty:14,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'18.07',code:'6.02.7',desc:'Válvula globo corte 2.5" BSA1 Spirax Sarco clase 150',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'18.08',code:'6.02.8',desc:'Separador de gotas 2" Spirax Sarco S2 hierro fundido',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'18.10',code:'6.02.10',desc:'Válvula reguladora presión 2" DP17/DP27 bridada',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'18.11',code:'6.02.11',desc:'Válvula seguridad 2.5" bronce SV5601 150psi + descarga',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'18.12',code:'6.02.12',desc:'Manómetro Bourdon 0-250psi + sifón + válvula cierre',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'19', name:'ARREGLO DE VAPOR A CIP 3', subsec:true, items:[
+        {id:'19.01',code:'6.03.1',desc:'Tubería 2.5" A106 Grado B cédula 40 - arnés vapor',qty:20,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'19.02',code:'6.03.2',desc:'Tubería 2" A106 Grado B - bota condensados',qty:16,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'19.07',code:'6.03.7',desc:'Válvula globo corte 2.5" BSA1 clase 150 manual',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'19.09',code:'6.03.9',desc:'Filtro strainer Y 2.5" Spirax Sarco DN65 1.6mm',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'19.11',code:'6.03.11',desc:'Válvula seguridad 2.5" bronce SV5601 150psi',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'19.12',code:'6.03.12',desc:'Manómetro Bourdon 0-250psi + sifón',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'20', name:'ARREGLO DE VAPOR A CIP 4', subsec:true, items:[
+        {id:'20.01',code:'6.04.1',desc:'Tubería 2.5" A106 Grado B cédula 40',qty:20,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'20.02',code:'6.04.2',desc:'Tubería 2" A106 cédula 40 - bota condensados',qty:16,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'20.07',code:'6.04.7',desc:'Válvula globo corte 2.5" BSA1 clase 150 manual',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'20.09',code:'6.04.9',desc:'Filtro strainer Y 2.5" DN65 1.6mm bridado',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'20.11',code:'6.04.11',desc:'Válvula seguridad 2.5" bronce 150psi + descarga',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'20.12',code:'6.04.12',desc:'Manómetro Bourdon 0-250psi glicerina',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'21', name:'ARREGLO DE VAPOR A CIP 5', subsec:true, items:[
+        {id:'21.01',code:'6.05.1',desc:'Tubería 2.5" A106 Grado B cédula 40',qty:20,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'21.07',code:'6.05.7',desc:'Válvula globo corte 2.5" manual',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'21.08',code:'6.05.8',desc:'Separador de gotas 2"',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'21.11',code:'6.05.11',desc:'Válvula seguridad 2.5" 150psi + descarga techo',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'21.12',code:'6.05.12',desc:'Manómetro Bourdon 0-250psi',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'22', name:'ARREGLO DE VAPOR A CIP 6', subsec:true, items:[
+        {id:'22.01',code:'6.06.1',desc:'Tubería 2.5" A106 Grado B cédula 40',qty:20,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'22.02',code:'6.06.2',desc:'Tubería 2" bota condensados',qty:16,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'22.07',code:'6.06.7',desc:'Válvula globo corte 2.5" manual',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'22.09',code:'6.06.9',desc:'Filtro strainer Y 2.5" DN65',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'22.11',code:'6.06.11',desc:'Válvula seguridad 2.5" 150psi',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'22.12',code:'6.06.12',desc:'Manómetro Bourdon 0-250psi',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+    ]
+  },
+  { id:'VII', label:'VII', name:'Arreglos Trampa Condensado Separadora de Gotas CIP', color:'#00d4aa', week:1,
+    items:[
+      { id:'23', name:'TRAMPA CONDENSADO SEPARADORA CIP 1', subsec:true, items:[
+        {id:'23.01',code:'7.01.1',desc:'Tubería roscada 1.25" A106 Grado B cédula 40',qty:16,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'23.02',code:'7.01.2',desc:'Tubería roscada 0.75" A106 Grado B cédula 40',qty:6,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'23.03',code:'7.01.3',desc:'Tubería roscada 0.5" A106 Grado B cédula 40',qty:3,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'23.07',code:'7.01.7',desc:'Trampa condensado Ball Float 0.5" FT14 horizontal NPT',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'23.10',code:'7.01.10',desc:'Válvula retención levante 1.25" Spirax Sarco LCV1 203psi bronce',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'23.11',code:'7.01.11',desc:'Válvula termostática Spirax Sarco 3/4" roscada escuadra',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'23.12',code:'7.01.12',desc:'Válvula bola cierre rápido 1.25" bronce NPT',qty:3,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'23.13',code:'7.01.13',desc:'Válvula bola cierre rápido 0.75" bronce NPT',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'23.14',code:'7.01.14',desc:'Válvula bola cierre rápido 0.5" bronce NPT',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'24', name:'TRAMPA CONDENSADO SEPARADORA CIP 2', subsec:true, items:[
+        {id:'24.01',code:'7.02.1',desc:'Tubería roscada 1.25" A106 Grado B cédula 40',qty:16,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'24.07',code:'7.02.7',desc:'Trampa condensado Ball Float 0.5" FT14 NPT',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'24.10',code:'7.02.10',desc:'Válvula retención levante 1.25" LCV1 bronce',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'24.12',code:'7.02.12',desc:'Válvula bola cierre rápido 1.25" bronce',qty:3,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'25', name:'TRAMPA CONDENSADO SEPARADORA CIP 3', subsec:true, items:[
+        {id:'25.01',code:'7.03.1',desc:'Tubería roscada 1.25" A106 Grado B',qty:16,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'25.07',code:'7.03.7',desc:'Trampa condensado Ball Float 0.5" FT14',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'25.10',code:'7.03.10',desc:'Válvula retención levante 1.25" LCV1',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'25.12',code:'7.03.15',desc:'Válvula bola cierre rápido 1.25" bronce',qty:3,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'26', name:'TRAMPA CONDENSADO SEPARADORA CIP 4', subsec:true, items:[
+        {id:'26.01',code:'7.04.1',desc:'Tubería roscada 1.25" A106 Grado B',qty:16,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'26.07',code:'7.04.7',desc:'Trampa condensado Ball Float 0.5"',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'26.12',code:'7.04.15',desc:'Válvula bola cierre rápido 1.25"',qty:3,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'27', name:'TRAMPA CONDENSADO SEPARADORA CIP 5', subsec:true, items:[
+        {id:'27.01',code:'7.05.1',desc:'Tubería roscada 1.25" A106',qty:16,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'27.07',code:'7.05.7',desc:'Trampa condensado Ball Float 0.5"',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'27.12',code:'7.05.15',desc:'Válvula bola cierre rápido 1.25"',qty:3,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'28', name:'TRAMPA CONDENSADO SEPARADORA CIP 6', subsec:true, items:[
+        {id:'28.01',code:'7.06.1',desc:'Tubería roscada 1.25" A106',qty:16,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'28.07',code:'7.06.7',desc:'Trampa condensado Ball Float 0.5"',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'28.12',code:'7.06.15',desc:'Válvula bola cierre rápido 1.25"',qty:3,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'29', name:'LÍNEA RECOLECCIÓN CONDENSADO → RECOLECTOR CIP', subsec:true, items:[
+        {id:'29.01',code:'7.07.1',desc:'Tubería roscada 1.5" A106 Grado B cédula 40',qty:64,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'29.02',code:'7.07.2',desc:'Aislamiento 1.5" lana mineral Metal Jacket aluminio 0.5mm',qty:64,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'29.03',code:'7.07.3',desc:'Válvula bola cierre rápido 1.5" bronce NPT',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'29.04',code:'7.07.4',desc:'Instalación equipo recolector condensado (suministro Tetrapack)',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+    ]
+  },
+  { id:'VIII', label:'VIII', name:'Manifold Suministro Vapor a Módulos CIP', color:'#ff6b35', week:1,
+    items:[
+      {id:'30.01',code:'8.01',desc:'Tubería soldada TIG 3" A106 Grado B cédula 40 - manifold',qty:71,unit:'Pies',s:'16/3',e:'28/3'},
+      {id:'30.02',code:'8.02',desc:'Aislamiento térmico 3" lana mineral 2.5" + Metal Jacket aluminio',qty:71,unit:'Pies',s:'16/3',e:'28/3'},
+      {id:'30.03',code:'8.03',desc:'Brida cuello soldable 3" ASME B16.5 Clase 150 ASTM A105',qty:12,unit:'Und',s:'16/3',e:'28/3'},
+      {id:'30.04',code:'8.04',desc:'Válvula globo corte 3" BSA1 Spirax Sarco A216 WCB clase 150',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+    ]
+  },
+  { id:'IX', label:'IX', name:'Trampa Condensado Manifold Suministro Vapor', color:'#a78bfa', week:1,
+    items:[
+      {id:'31.01',code:'9.01.1',desc:'Tubería roscada 1" A106 Grado B cédula 40 - trampa manifold',qty:12,unit:'Pies',s:'16/3',e:'28/3'},
+      {id:'31.02',code:'9.01.2',desc:'Aislamiento térmico 1" lana mineral 2" Metal Jacket',qty:12,unit:'Pies',s:'16/3',e:'28/3'},
+      {id:'31.03',code:'9.01.3',desc:'Trampa condensado Ball Float 1" FT14 horizontal NPT',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      {id:'31.04',code:'9.01.4',desc:'Válvula retención levante 1" Spirax Sarco LCV1 bronce AISI304',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      {id:'31.05',code:'9.01.5',desc:'Mirilla cristal doble Spirax Sarco 1" roscada NPT',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      {id:'31.06',code:'9.01.6',desc:'Válvula bola cierre rápido 1" bronce NPT',qty:6,unit:'Und',s:'16/3',e:'28/3'},
+      {id:'32.01',code:'9.02.1',desc:'Tubería roscada 1" A106 - línea recolección condensado manifold',qty:40,unit:'Pies',s:'16/3',e:'28/3'},
+      {id:'32.02',code:'9.02.2',desc:'Aislamiento 1" lana mineral 2" Metal Jacket',qty:40,unit:'Pies',s:'16/3',e:'28/3'},
+      {id:'32.03',code:'9.02.3',desc:'Válvula bola cierre rápido 1" bronce NPT',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+    ]
+  },
+  { id:'X', label:'X', name:'Trampas Condensado Retorno Módulos CIP', color:'#34d399', week:2,
+    items:[
+      { id:'33', name:'RETORNO CONDENSADO CIP 1', subsec:true, items:[
+        {id:'33.01',code:'10.01.1',desc:'Tubería roscada 1" A106 Grado B - retorno condensado',qty:15,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'33.03',code:'10.01.3',desc:'Trampa condensado Ball Float 1" FT14 horizontal',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'33.04',code:'10.01.4',desc:'Válvula retención levante 1" LCV1 bronce AISI304',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'33.05',code:'10.01.5',desc:'Mirilla cristal doble Spirax Sarco 1" NPT',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'33.07',code:'10.01.7',desc:'Válvula bola cierre rápido 1" bronce',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'34', name:'RETORNO CONDENSADO CIP 2', subsec:true, items:[
+        {id:'34.01',code:'10.02.1',desc:'Tubería roscada 1" A106 Grado B',qty:15,unit:'Pies',s:'16/3',e:'28/3'},
+        {id:'34.03',code:'10.02.3',desc:'Trampa condensado Ball Float 1"',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'34.05',code:'10.02.5',desc:'Mirilla cristal doble 1" NPT',qty:1,unit:'Und',s:'16/3',e:'28/3'},
+        {id:'34.07',code:'10.02.7',desc:'Válvula bola cierre rápido 1" bronce',qty:2,unit:'Und',s:'16/3',e:'28/3'},
+      ]},
+      { id:'35', name:'RETORNO CONDENSADO CIP 3', subsec:true, items:[
+        {id:'35.01',code:'10.03.1',desc:'Tubería roscada 1" A106 Grado B',qty:15,unit:'Pies',s:'23/3',e:'4/4'},
+        {id:'35.03',code:'10.03.3',desc:'Trampa condensado Ball Float 1"',qty:1,unit:'Und',s:'23/3',e:'4/4'},
+        {id:'35.05',code:'10.03.5',desc:'Mirilla cristal doble 1" NPT',qty:1,unit:'Und',s:'23/3',e:'4/4'},
+        {id:'35.07',code:'10.03.7',desc:'Válvula bola cierre rápido 1" bronce',qty:2,unit:'Und',s:'23/3',e:'4/4'},
+      ]},
+      { id:'36', name:'RETORNO CONDENSADO CIP 4', subsec:true, items:[
+        {id:'36.01',code:'10.04.1',desc:'Tubería roscada 1" A106 Grado B',qty:15,unit:'Pies',s:'23/3',e:'4/4'},
+        {id:'36.03',code:'10.04.3',desc:'Trampa condensado Ball Float 1"',qty:1,unit:'Und',s:'23/3',e:'4/4'},
+        {id:'36.07',code:'10.04.7',desc:'Válvula bola cierre rápido 1"',qty:2,unit:'Und',s:'23/3',e:'4/4'},
+      ]},
+      { id:'37', name:'RETORNO CONDENSADO CIP 5', subsec:true, items:[
+        {id:'37.01',code:'10.05.1',desc:'Tubería roscada 1" A106 Grado B',qty:15,unit:'Pies',s:'23/3',e:'4/4'},
+        {id:'37.03',code:'10.05.3',desc:'Trampa condensado Ball Float 1"',qty:1,unit:'Und',s:'23/3',e:'4/4'},
+        {id:'37.07',code:'10.05.7',desc:'Válvula bola cierre rápido 1"',qty:2,unit:'Und',s:'23/3',e:'4/4'},
+      ]},
+      { id:'38', name:'RETORNO CONDENSADO CIP 6', subsec:true, items:[
+        {id:'38.01',code:'10.06.1',desc:'Tubería roscada 1" A106 Grado B',qty:15,unit:'Pies',s:'23/3',e:'4/4'},
+        {id:'38.03',code:'10.06.3',desc:'Trampa condensado Ball Float 1"',qty:1,unit:'Und',s:'23/3',e:'4/4'},
+        {id:'38.07',code:'10.06.7',desc:'Válvula bola cierre rápido 1"',qty:2,unit:'Und',s:'23/3',e:'4/4'},
+      ]},
+      { id:'39', name:'LÍNEA RECOLECCIÓN PRINCIPAL CONDENSADO RETORNO', subsec:true, items:[
+        {id:'39.01',code:'10.07.1',desc:'Tubería roscada 1.5" A106 Grado B cédula 40',qty:88,unit:'Pies',s:'23/3',e:'4/4'},
+        {id:'39.02',code:'10.07.2',desc:'Aislamiento 1.5" lana mineral Metal Jacket aluminio',qty:88,unit:'Pies',s:'23/3',e:'4/4'},
+        {id:'39.03',code:'10.07.3',desc:'Válvula bola cierre rápido 1.5" bronce NPT',qty:2,unit:'Und',s:'23/3',e:'4/4'},
+      ]},
+    ]
+  },
+];
+
+/* ─── STATE ─────────────────────────────────────────────────────────────── */
+const SHEETS_URL = 'https://script.google.com/macros/s/AKfycbxIJa7oMfSTOt5BI5SXgW2BuoWzoEm4vNcFSZoP4BXvO0U8OufGQGA8I74_IV0H9pBE6w/exec';
+
+const PS = {};
+function allLeaves(secs) {
+  const out = [];
+  function w(items) { items.forEach(i => { if(i.subsec) w(i.items); else out.push(i); }); }
+  secs.forEach(s => w(s.items));
+  return out;
+}
+allLeaves(DATA).forEach(i => PS[i.id] = 0);
+
+/* ─── GOOGLE SHEETS: cargar avances ─────────────────────────────────────── */
+async function loadFromSheets() {
+  try {
+    showSyncBar('⟳ Cargando avances desde Google Sheets...', 'var(--text-muted)');
+    // Google Apps Script requiere redirect follow para CORS
+    const res = await fetch(SHEETS_URL, {
+      method: 'GET',
+      redirect: 'follow',
+    });
+    const text = await res.text();
+    // Parsear respuesta (a veces viene con caracteres extra)
+    const clean = text.trim().replace(/^[^{]*/, '').replace(/[^}]*$/, '');
+    let json;
+    try { json = JSON.parse(text); } catch(e) { json = JSON.parse(clean); }
+    if (!json.ok) throw new Error(json.error || 'Error en Sheets');
+    const data = json.data;
+    Object.keys(data).forEach(id => {
+      if (PS.hasOwnProperty(id)) {
+        PS[id] = parseInt(data[id]) || 0;
+      }
+    });
+    showSyncBar('✓ Avances actualizados desde Google Sheets', 'var(--accent3)');
+    setTimeout(() => hideSyncBar(), 3000);
+    return true;
+  } catch(err) {
+    console.warn('Sheets error:', err.message);
+    showSyncBar('ℹ Mostrando avances guardados localmente', 'var(--text-muted)');
+    setTimeout(() => hideSyncBar(), 3000);
+    return false;
+  }
+}
+
+function showSyncBar(msg, color) {
+  let bar = document.getElementById('syncBar');
+  if (!bar) return;
+  bar.textContent = msg;
+  bar.style.color = color || 'var(--text-muted)';
+  bar.style.display = 'block';
+}
+function hideSyncBar() {
+  const bar = document.getElementById('syncBar');
+  if (bar) bar.style.display = 'none';
+}
+
+function leafOf(sec) {
+  const out = [];
+  function w(items) { items.forEach(i => { if(i.subsec) w(i.items); else out.push(i); }); }
+  w(sec.items);
+  return out;
+}
+
+/* ─── HELPERS ────────────────────────────────────────────────────────────── */
+const getStatus = p => p===100?'done':p>0?'prog':'todo';
+const barColor  = p => p===100?'var(--done)':p>60?'#86efac':p>30?'var(--prog)':'var(--accent2)';
+const badge = p => p===100
+  ? '<span class="s-badge b-done">✓ LISTO</span>'
+  : p>0
+  ? '<span class="s-badge b-prog">⬤ EN PROGRESO</span>'
+  : '<span class="s-badge b-todo">○ PENDIENTE</span>';
+
+/* ─── RENDER ─────────────────────────────────────────────────────────────── */
+function rowHTML(item) {
+  const p = PS[item.id]||0;
+  return `<div class="act-row" id="row-${item.id}" data-pct="${p}" data-status="${getStatus(p)}">
+    <div class="a-idx">${item.id}</div>
+    <div class="a-code">${item.code}</div>
+    <div class="a-desc">${item.desc}</div>
+    <div class="a-qty">${item.qty} <span class="a-unit">${item.unit}</span></div>
+    <div class="a-dates">
+      <div class="d-chip"><span class="d-dot s"></span>${item.s}</div>
+      <div class="d-chip"><span class="d-dot e"></span>${item.e}</div>
+    </div>
+    <div class="prog-ctrl">
+      <div class="pct-row">
+        <input type="range" class="pct-range" min="0" max="100" step="5" value="${p}"
+          oninput="upd('${item.id}',this.value)" title="Solo propietario puede modificar">
+        <span class="pct-sign" id="pct-${item.id}">${p}%</span>
+      </div>
+      <div class="tiny-bar"><div class="tiny-fill" id="tf-${item.id}" style="width:${p}%;background:${barColor(p)}"></div></div>
+      <div class="vo-hint">🔒 Solo propietario</div>
+    </div>
+    <div id="badge-${item.id}">${badge(p)}</div>
+  </div>`;
+}
+
+function subHTML(sub) {
+  const avg = sub.items.reduce((a,i)=>a+(PS[i.id]||0),0)/sub.items.length;
+  return `<div class="sec-block" id="sub-${sub.id}">
+    <div class="sec-hdr" style="border-left-color:rgba(255,255,255,.13);padding:.6rem 1rem .6rem 2rem" onclick="tog('sub-${sub.id}')">
+      <div class="sec-num" style="font-size:.85rem;color:var(--text-muted)">${sub.id}</div>
+      <div class="sec-name" style="font-size:.74rem;color:var(--text-dim)">${sub.name}</div>
+      <div class="sec-meta"><div class="sec-prog">
+        <div class="mini-bar"><div class="mini-fill" id="mf-sub-${sub.id}" style="width:${avg.toFixed(0)}%"></div></div>
+        <span id="pt-sub-${sub.id}">${avg.toFixed(0)}%</span>
+        <span class="chev">▼</span>
+      </div></div>
+    </div>
+    <div class="act-wrap">${sub.items.map(rowHTML).join('')}</div>
+  </div>`;
+}
+
+function secHTML(sec, idx) {
+  const lv  = leafOf(sec);
+  const avg = lv.length ? lv.reduce((a,i)=>a+(PS[i.id]||0),0)/lv.length : 0;
+  return `<div class="sec-block" id="sec-${sec.id}" style="animation-delay:${idx*60}ms">
+    <div class="sec-hdr" style="border-left-color:${sec.color}" onclick="tog('sec-${sec.id}')">
+      <div class="sec-num">${sec.label}</div>
+      <div class="sec-name">${sec.name}</div>
+      <div class="sec-meta"><div class="sec-prog">
+        <div class="mini-bar"><div class="mini-fill" id="mf-sec-${sec.id}" style="width:${avg.toFixed(0)}%"></div></div>
+        <span id="pt-sec-${sec.id}">${avg.toFixed(0)}%</span>
+        <span class="chev">▼</span>
+      </div></div>
+    </div>
+    <div class="act-wrap">${sec.items.map(i=>i.subsec?subHTML(i):rowHTML(i)).join('')}</div>
+  </div>`;
+}
+
+function render() {
+  document.getElementById('gantt').innerHTML = `
+    <div class="week-hdr">
+      <div class="col-h">#</div><div class="col-h">Código</div><div class="col-h">Descripción</div>
+      <div class="col-h">Cantidad</div><div class="col-h">Fechas</div><div class="col-h">Avance</div><div class="col-h">Estado</div>
+    </div>
+    <div class="week-sep">
+      <div class="wk-lbl"><span class="wn">SEMANA 1</span> — Inicio de obra</div>
+      <div class="wk-line"></div><div class="wk-range">16 Mar — 28 Mar 2026</div>
+    </div>
+    ${DATA.filter(s=>s.week===1).map((s,i)=>secHTML(s,i)).join('')}
+    <div class="week-sep">
+      <div class="wk-lbl"><span class="wn">SEMANA 2–3</span> — Continuación</div>
+      <div class="wk-line"></div><div class="wk-range">23 Mar — 4 Abr 2026</div>
+    </div>
+    ${DATA.filter(s=>s.week===2).map((s,i)=>secHTML(s,i+4)).join('')}`;
+  updateGlobals(); updateStats();
+}
+
+/* ─── UPDATE ─────────────────────────────────────────────────────────────── */
+function upd(id, val) {
+  if (!isOwner) return;
+  const p = parseInt(val);
+  PS[id] = p;
+  document.getElementById(`pct-${id}`).textContent = p+'%';
+  const tf = document.getElementById(`tf-${id}`);
+  tf.style.width = p+'%'; tf.style.background = barColor(p);
+  document.getElementById(`badge-${id}`).innerHTML = badge(p);
+  const row = document.getElementById(`row-${id}`);
+  row.dataset.pct = p; row.dataset.status = getStatus(p);
+  updateParents(); updateGlobals(); updateStats();
+}
+
+function updateParents() {
+  document.querySelectorAll('[id^="sub-"]').forEach(el => {
+    const id = el.id.replace('sub-','');
+    const rows = el.querySelectorAll('.act-row');
+    if (!rows.length) return;
+    const avg = Array.from(rows).reduce((a,r)=>a+parseInt(r.dataset.pct||0),0)/rows.length;
+    const mf = document.getElementById(`mf-sub-${id}`);
+    const pt = document.getElementById(`pt-sub-${id}`);
+    if (mf) mf.style.width = avg.toFixed(0)+'%';
+    if (pt) pt.textContent = avg.toFixed(0)+'%';
+  });
+  DATA.forEach(sec => {
+    const lv  = leafOf(sec);
+    if (!lv.length) return;
+    const avg = lv.reduce((a,i)=>a+(PS[i.id]||0),0)/lv.length;
+    const mf = document.getElementById(`mf-sec-${sec.id}`);
+    const pt = document.getElementById(`pt-sec-${sec.id}`);
+    if (mf) mf.style.width = avg.toFixed(0)+'%';
+    if (pt) pt.textContent = avg.toFixed(0)+'%';
+  });
+}
+
+function updateGlobals() {
+  const lv = allLeaves(DATA);
+  const p  = Math.round(lv.reduce((a,i)=>a+(PS[i.id]||0),0)/lv.length);
+  document.getElementById('gBar').style.width = p+'%';
+  document.getElementById('gPct').innerHTML = p+'<sup>%</sup>';
+  const done = lv.filter(i=>PS[i.id]===100).length;
+  const prog = lv.filter(i=>PS[i.id]>0&&PS[i.id]<100).length;
+  document.getElementById('gStatus').innerHTML =
+    `<span style="color:var(--done)">${done} completas</span> · `+
+    `<span style="color:var(--prog)">${prog} en progreso</span> · `+
+    `<span style="color:var(--text-muted)">${lv.length-done-prog} pendientes</span>`;
+}
+
+function updateStats() {
+  const lv   = allLeaves(DATA);
+  const done = lv.filter(i=>PS[i.id]===100).length;
+  const prog = lv.filter(i=>PS[i.id]>0&&PS[i.id]<100).length;
+  document.getElementById('statsRow').innerHTML = `
+    <div class="stat-box"><div class="val">${lv.length}</div><div class="lbl">Actividades</div></div>
+    <div class="stat-box"><div class="val" style="color:var(--done)">${done}</div><div class="lbl">Completas</div></div>
+    <div class="stat-box"><div class="val" style="color:var(--prog)">${prog}</div><div class="lbl">En Progreso</div></div>
+    <div class="stat-box"><div class="val" style="color:var(--text-muted)">${lv.length-done-prog}</div><div class="lbl">Pendientes</div></div>`;
+}
+
+/* ─── UI ─────────────────────────────────────────────────────────────────── */
+function tog(id)  { document.getElementById(id).classList.toggle('collapsed'); }
+function expandAll(e)  { document.querySelectorAll('.sec-block').forEach(el=>el.classList.remove('collapsed')); document.querySelectorAll('.v-btn').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); }
+function collapseAll(e){ document.querySelectorAll('.sec-block').forEach(el=>el.classList.add('collapsed')); document.querySelectorAll('.v-btn').forEach(b=>b.classList.remove('active')); e.target.classList.add('active'); }
+function filterView(t,btn) {
+  document.querySelectorAll('.f-tab').forEach(b=>b.classList.remove('active')); btn.classList.add('active');
+  document.querySelectorAll('.act-row').forEach(r=>{ r.style.display=(t==='all'||r.dataset.status===t)?'':'none'; });
+}
+function toast(msg, color) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.style.borderLeftColor = color||'var(--accent3)';
+  t.classList.add('on'); setTimeout(()=>t.classList.remove('on'), 3000);
+}
+
+// ── INICIO: siempre muestra cronograma, Sheets carga en segundo plano ──────
+async function init() {
+  try {
+    // PASO 1: Mostrar cronograma INMEDIATAMENTE (nunca falla)
+    render();
+    activateRoleUI();
+  } catch(e) {
+    console.error('Error en render inicial:', e);
+  }
+
+  // PASO 2: Intentar cargar Sheets SIN bloquear (en segundo plano)
+  try {
+    const controller = new AbortController();
+    const tid = setTimeout(() => controller.abort(), 7000);
+    const res  = await fetch(SHEETS_URL + '?nocache=' + Date.now(), {
+      signal: controller.signal,
+      redirect: 'follow'
+    });
+    clearTimeout(tid);
+    const text = await res.text();
+    const json = JSON.parse(text);
+    if (json && json.ok && json.data) {
+      let changed = false;
+      Object.keys(json.data).forEach(id => {
+        const v = parseInt(json.data[id]) || 0;
+        if (PS.hasOwnProperty(id) && PS[id] !== v) {
+          PS[id] = v;
+          changed = true;
+        }
+      });
+      if (changed) {
+        // Actualizar solo los elementos que cambiaron, sin re-renderizar todo
+        allLeaves(DATA).forEach(item => {
+          const p   = PS[item.id] || 0;
+          const row = document.getElementById('row-' + item.id);
+          if (!row) return;
+          row.dataset.pct    = p;
+          row.dataset.status = getStatus(p);
+          const pctEl = document.getElementById('pct-' + item.id);
+          const tfEl  = document.getElementById('tf-'  + item.id);
+          const badEl = document.getElementById('badge-'+ item.id);
+          const rng   = row.querySelector('.pct-range');
+          if (pctEl) pctEl.textContent = p + '%';
+          if (tfEl)  { tfEl.style.width = p+'%'; tfEl.style.background = barColor(p); }
+          if (badEl) badEl.innerHTML = badge(p);
+          if (rng)   rng.value = p;
+        });
+        updateParents();
+        updateGlobals();
+        updateStats();
+        showSyncBar('✓ Avances cargados desde Google Sheets', 'var(--accent3)');
+        setTimeout(() => hideSyncBar(), 3000);
+      }
+    }
+  } catch(err) {
+    // Silencioso — el cronograma ya se mostró en el paso 1
+    showSyncBar('ℹ Sin conexión a Google Sheets — cronograma visible sin avances', 'var(--text-muted)');
+    setTimeout(() => hideSyncBar(), 4000);
+  }
+}
+
+function activateRoleUI() {
+  const role = sessionStorage.getItem('cip_role');
+  const user = sessionStorage.getItem('cip_user') || 'usuario';
+  if (role === 'owner') {
+    isOwner = true;
+    document.body.classList.remove('view-only');
+    document.getElementById('editBanner').classList.add('on');
+    const b = document.getElementById('authBtn');
+    if (b) {
+      b.className = 'auth-btn owner';
+      b.innerHTML = '<span class="auth-dot" style="background:var(--accent)"></span><span>' + user.toUpperCase() + ' · EDITOR</span>';
+      b.onclick = doLogout;
+    }
+  } else {
+    document.body.classList.add('view-only');
+    const b = document.getElementById('authBtn');
+    if (b) {
+      b.className = 'auth-btn viewer';
+      b.innerHTML = '<span class="auth-dot" style="background:var(--accent3)"></span><span>' + user.toUpperCase() + ' · LECTURA</span>';
+      b.onclick = function() { window.location.href = 'index.html'; };
+    }
+  }
+}
+
+init();
+</script>
+</body>
+</html>
